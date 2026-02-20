@@ -4,3 +4,4 @@ docx
 re
 langchain-ollam
 json
+fpdf
