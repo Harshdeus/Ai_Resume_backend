@@ -1,72 +1,94 @@
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, ListFlowable, ListItem
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT
 from reportlab.lib import colors
 
 
 def save_resume_as_pdf_reportlab(formatted_resume: str, filename="output/KPMG_Resume.pdf"):
-    # Create PDF document
     doc = SimpleDocTemplate(filename, pagesize=A4,
                             rightMargin=2 * cm, leftMargin=2 * cm,
                             topMargin=2 * cm, bottomMargin=2 * cm)
-
     elements = []
 
-    # Define styles
-    styles = getSampleStyleSheet()
+    # Styles
+    logo_style = ParagraphStyle(name="Logo", fontSize=13, leading=14, alignment=TA_RIGHT,
+                                spaceAfter=10, fontName="Helvetica-Bold", textColor=colors.HexColor("#00338D"))
 
-    logo_style = ParagraphStyle('LogoStyle', fontName='Helvetica-Bold', fontSize=13, alignment=TA_RIGHT)
-    name_style = ParagraphStyle('NameStyle', fontName='Helvetica-Bold', fontSize=13)
-    section_style = ParagraphStyle('SectionStyle', fontName='Helvetica-Bold', fontSize=10, spaceBefore=10)
-    job_style = ParagraphStyle('JobStyle', fontName='Helvetica-Bold', fontSize=8.5, spaceBefore=6)
-    bullet_style = ParagraphStyle('BulletStyle', fontName='Helvetica', fontSize=8.5, leftIndent=12, bulletIndent=0,
-                                  spaceBefore=2)
+    name_skills_style = ParagraphStyle(name="NameSkills", fontSize=13, leading=16, alignment=TA_LEFT,
+                                       spaceAfter=12, fontName="Helvetica", textColor=colors.black)
 
-    # Split the resume by lines
+    section_heading_style = ParagraphStyle(name="SectionHeading", fontSize=10, leading=12,
+                                           spaceBefore=10, spaceAfter=4, fontName="Helvetica-Bold",
+                                           textColor=colors.black)
+
+    bullet_style = ParagraphStyle(name="Bullet", fontSize=8.5, leading=12,
+                                  leftIndent=15, firstLineIndent=-10, spaceAfter=3,
+                                  fontName="Helvetica", textColor=colors.black)
+
+    job_role_style = ParagraphStyle(name="JobRole", fontSize=8.5, leading=12, spaceAfter=2,
+                                    fontName="Helvetica-Bold", textColor=colors.black)
+
+    sub_header_style = ParagraphStyle(name="SubHeader", fontSize=8.5, leading=12, spaceBefore=4, spaceAfter=2,
+                                      fontName="Helvetica-Bold", textColor=colors.black)
+
     lines = formatted_resume.split("\n")
+    cert_section_active = False
 
     for line in lines:
         line = line.strip()
         if not line:
+            elements.append(Spacer(1, 4))
             continue
 
-        # KPMG Logo right-aligned
+        # KPMG Logo - right aligned
         if "[KPMG Logo]" in line:
-            elements.append(Paragraph("KPMG Logo", logo_style))
-            elements.append(Spacer(1, 0.3 * cm))
+            elements.append(Paragraph("KPMG", logo_style))
+            continue
 
-        # Name and skillset
-        elif " - " in line and not line.startswith("-"):
-            elements.append(Paragraph(line, name_style))
-            elements.append(Spacer(1, 0.2 * cm))
+        # Name of the candidate - skills set
+        if "DAR SHROFF" in line and " - " in line:
+            elements.append(Paragraph(line, name_skills_style))
+            continue
 
-        # Sections like Summary, Professional Summary, Skills, Education
-        elif line.lower() in ["summary", "professional summary", "skills:", "certifications", "education:"]:
-            elements.append(Paragraph(line, section_style))
-            elements.append(Spacer(1, 0.2 * cm))
+        # Professional Summary (11+ years) specifically
+        if line.startswith("Professional Summary ("):
+            elements.append(Paragraph(line, section_heading_style))
+            cert_section_active = False
+            continue
 
-        # Job roles, ProjectDescription, Role & Responsibilities
-        elif (" - " in line and "-" not in line[:2]) or line.lower().startswith(
-                "role & responsibilities") or line.lower().startswith("projectdescription"):
-            elements.append(Paragraph(line, job_style))
-            elements.append(Spacer(1, 0.1 * cm))
+        # Other section headings
+        if line.lower() in ["summary", "skills", "education", "certification", "certifications"]:
+            section_name = line.title()
+            elements.append(Paragraph(section_name, section_heading_style))
+            cert_section_active = "cert" in line.lower()
+            continue
 
-        # Bullet points
-        elif line.startswith("-") or line.startswith("•"):
-            # Remove bullet from original text and use ListFlowable
-            bullet_text = line.lstrip("-").lstrip("•").strip()
-            bullet_item = ListFlowable([ListItem(Paragraph(bullet_text, bullet_style), bulletColor=colors.black)],
-                                       bulletType='bullet')
-            elements.append(bullet_item)
-            elements.append(Spacer(1, 0.05 * cm))
+        # Job role lines
+        if any(role in line for role in ["External Talent Category Specialist", "Procurement Advisor", "Primary Associate"]):
+            elements.append(Paragraph(line, job_role_style))
+            continue
 
-        # Regular paragraph text
-        else:
-            elements.append(Paragraph(line, bullet_style))
-            elements.append(Spacer(1, 0.05 * cm))
+        # Role & Responsibilities sub-heading
+        if "Role & Responsibilities" in line:
+            elements.append(Paragraph("Role & Responsibilities:", sub_header_style))
+            continue
 
-    # Build PDF
+        # Handle bullet points (for Summary, Skills, Certifications, etc.)
+        if line.startswith("-") or line.startswith("•"):
+            clean_line = line.lstrip("-• ").strip()
+            if clean_line:
+                elements.append(Paragraph(f"• {clean_line}", bullet_style))
+            continue
+
+        # Handle lines in certifications section that may not start with bullet
+        if cert_section_active and line:
+            elements.append(Paragraph(f"• {line}", bullet_style))
+            continue
+
+        # Handle normal text lines outside bullets
+        elements.append(Paragraph(line, bullet_style))
+
     doc.build(elements)
     print(f"✅ Resume saved successfully as '{filename}'")

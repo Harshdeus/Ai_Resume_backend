@@ -202,4 +202,27 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
         if not job.get("roles_and_responsibilities"):
             job["roles_and_responsibilities"] = []  # LLM should populate, fallback empty
 
+    # ---- Extract Certifications ----
+    lines = clean_text.split("\n")
+    certifications = []
+    cert_active = False
+    for line in lines:
+        line = line.strip()
+        # Start when Certification heading found
+        if re.search(r"certifications?|certs?", line, re.I):
+            cert_active = True
+            continue
+        # Stop at next section heading
+        if cert_active and re.match(
+                r"^(Skills|Education|Professional Qualification|Personal Information|Projects|Work Experience|Professional Experience)",
+                line, re.I):
+            cert_active = False
+        # Collect certification lines
+        if cert_active and line:
+            clean_line = line.lstrip("•- ").strip()
+            if clean_line:
+                certifications.append(clean_line)
+
+    data["certifications"] = certifications if certifications else []
+
     return data

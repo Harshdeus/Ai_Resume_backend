@@ -3,9 +3,9 @@ from langchain_ollama import OllamaLLM
 from src.schema import json_structure
 from prompt.structured_prompt import parse_resume_with_llm
 from prompt.kpmg_prompt import wrap_kpmg_template_clean
-from src.export_to_pdf import save_resume_as_pdf_styled
+from src.export_to_pdf import save_resume_as_pdf_reportlab
 
-extract = extract_resume("Datasets/KPMG_Darshan_IT Procurement (Format).pdf")
+extract = extract_resume("Datasets/DeUS_IT Procurement_Vijiyalakshmi.docx")
 
 print("==== EXTRACTED TEXT (DEBUG) ====")
 print(extract)
@@ -20,4 +20,4 @@ print(structured)
 # Example usage
 formatted_resume = wrap_kpmg_template_clean(structured)
 print(formatted_resume)
-# save_resume_as_pdf_styled(formatted_resume)
+save_resume_as_pdf_reportlab(formatted_resume)
