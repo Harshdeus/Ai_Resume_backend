@@ -1,0 +1,6 @@
+os
+PyPDF2
+docx
+re
+langchain-ollam
+json
