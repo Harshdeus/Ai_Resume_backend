@@ -27,23 +27,21 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
     1. NAME & PRIMARY SKILLS
     =====================
     - Name: Extract the full name exactly as written in the resume (first occurrence at top).
-    - Primary Skills: Extract top skills exactly as written from sections titled:
-      "Key Skills", "Skills", "Technical Skills", "Skill Set", "Core Competencies" or similar.
+   - Primary Skill Set (Title):
+  Extract ONLY the short headline skill set that appears next to or immediately below the candidate name.
 
+  Examples:
+  - "IT Procurement and Vendor Management"
+  - "Staffing Solutions, Vendor Development & Management, Team Management"
 
-    =====================
-    2. PROFESSIONAL SUMMARY
-    =====================
-    - Look for headings:
-      "OBJECTIVE", "Profile Summary", "Summary", "Career Objective", "Professional Summary" (case-insensitive).
-
-    - If no heading exists, use the first descriptive paragraph before "Experience" or "Skills".
-    - Extract sentences as individual bullet points.
-    - Split by ".", "?", "!".
-    - Preserve wording exactly.
-    - Return as array of sentences.
-    - Also extract total years of experience if mentioned (example: "15+ years of experience").
-
+  Rules:
+  - Must be a short phrase (1 line only).
+  - Do NOT extract long comma-separated skill lists.
+  - Do NOT extract bullet-point skill sections.
+  - Do NOT extract Skills section content.
+  - Prefer the line near the candidate name/header.
+  - Preserve wording exactly as in the resume.
+  - If not found, return empty string "".
 
     =====================
     3. PROFESSIONAL EXPERIENCE

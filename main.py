@@ -5,7 +5,7 @@ from prompt.structured_prompt import parse_resume_with_llm
 from prompt.kpmg_prompt import wrap_kpmg_template_clean
 from src.export_to_pdf import save_resume_as_pdf_reportlab
 
-extract = extract_resume("Datasets/DeUS_IT Procurement_Vijiyalakshmi.docx")
+extract = extract_resume("Datasets/KPMG_Darshan_IT Procurement (Format).pdf")
 
 print("==== EXTRACTED TEXT (DEBUG) ====")
 print(extract)
