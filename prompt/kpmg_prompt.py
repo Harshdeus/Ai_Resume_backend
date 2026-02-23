@@ -1,23 +1,35 @@
-def wrap_kpmg_template_clean(json_data):
+def wrap_kpmg_template_clean(json_data: dict) -> str:
     lines = []
 
-    # Right-aligned KPMG logo
+    # ---- Right-aligned KPMG logo ----
     lines.append(" " * 60 + "[KPMG Logo]\n")
 
-    # Name - Skills
-    primary_skills = ", ".join(json_data.get("primary_skill_set", []))
+    # ---- Name - Skills ----
+    skills_list = json_data.get("skills", [])
+    primary_skills = ", ".join(skills_list) if skills_list else ""
     lines.append(f"{json_data.get('name', '')} - {primary_skills}\n")
 
-    # Summary
-    lines.append("Summary")
-    for s in json_data.get("professional_summary", {}).get("summary_points", []):
+    # ---- Summary ----
+    lines.append("Summary:")
+    prof_summary = json_data.get("professional_summary", [])
+
+    # Handle both list and dict format
+    if isinstance(prof_summary, dict):
+        summary_points = prof_summary.get("summary_points", [])
+    elif isinstance(prof_summary, list):
+        summary_points = prof_summary
+    else:
+        summary_points = []
+
+    for s in summary_points:
         lines.append(f"- {s}")
-    lines.append("")
+    lines.append("")  # blank line
 
-    # Professional Summary with years of experience
-    years_exp = json_data.get("professional_summary", {}).get("years_of_experience", "")
-    lines.append(f"Professional Summary ({years_exp})")
+    # ---- Professional Summary with Years of Experience ----
+    years_exp = str(json_data.get("total_years_experience", ""))
+    lines.append(f"Professional Summary ({years_exp} years):\n")
 
+    # Work Experience in descending order
     for exp in json_data.get("professional_experience", []):
         job_role = exp.get("job_role", "")
         department = exp.get("department", "")
@@ -25,40 +37,53 @@ def wrap_kpmg_template_clean(json_data):
         lines.append(f"{job_role} - {department if department else ''}, {duration}")
 
         # Project Description
-        if exp.get("project_description"):
+        project_desc = exp.get("project_description", [])
+        if project_desc:
             lines.append("Project Description:")
-            for pd in exp["project_description"]:
+            for pd in project_desc:
                 lines.append(f"- {pd}")
 
         # Roles & Responsibilities
-        if exp.get("roles_and_responsibilities"):
-            lines.append("Role & Responsibilities:")
-            for r in exp["roles_and_responsibilities"]:
+        roles_resp = exp.get("roles_and_responsibilities", [])
+        if roles_resp:
+            lines.append("Roles & Responsibilities:")
+            for r in roles_resp:
                 lines.append(f"- {r}")
+
         lines.append("")  # blank line between jobs
 
-    # Skills
-    if json_data.get("skills"):
+    # ---- Skills ----
+    if skills_list:
         lines.append("Skills:")
-        for skill in json_data["skills"]:
+        for skill in skills_list:
             lines.append(f"- {skill}")
         lines.append("")
 
-    # Certifications
-    if json_data.get("certifications"):
+    # ---- Certifications ----
+    certs = json_data.get("certifications", [])
+    if certs:
         lines.append("Certifications:")
-        for cert in json_data["certifications"]:
-            lines.append(f"- {cert}")
+        for cert in certs:
+            # Handle dict or string
+            if isinstance(cert, dict):
+                cert_name = cert.get("name", "")
+                cert_levels = cert.get("levels", [])
+                lines.append(f"- {cert_name}")
+                for level in cert_levels:
+                    lines.append(f"  • {level}")
+            else:
+                lines.append(f"- {cert}")
         lines.append("")
 
-    # Education
-    if json_data.get("education"):
+    # ---- Education ----
+    edu_list = json_data.get("education", [])
+    if edu_list:
         lines.append("Education:")
-        for edu in json_data["education"]:
+        for edu in edu_list:
             degree = edu.get("degree", "")
             institution = edu.get("institution", "")
             year = edu.get("passout_year", "")
             lines.append(f"- {degree}, {institution}, {year}")
         lines.append("")
 
-    return "\n".join(lines)
+    return "\n".join(lines).strip()

@@ -3,133 +3,220 @@ import re
 
 def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
     prompt = f"""
-    You are a professional resume parser.
+    You are an expert ATS-grade resume parsing engine.
 
-    Extract information from the resume text below and return ONLY a valid JSON object
-    that strictly matches this schema:
+    Your task is STRICT structured extraction.
+    You are NOT allowed to summarize.
+    You are NOT allowed to explain.
+    You are NOT allowed to guess.
 
-    {json.dumps(json_schema, indent=4)}
+    Return ONLY valid JSON matching this schema EXACTLY:
+    {json.dumps(json_schema, indent=2)}
 
-    IMPORTANT:
-    - If no explicit summary heading exists, extract the first descriptive paragraph before Skills or Experience as summary.
-    - Do not return empty summary if descriptive text exists at the top.
+    ==================== GLOBAL RULES ====================
 
-    IMPORTANT GLOBAL RULES:
-    - Extract ONLY information that exists in the resume text.
-    - NEVER create or assume data.
-    - NEVER use placeholder values like "John Doe".
-    - Preserve original wording exactly as in resume.
-    - If a section is missing, return an empty array [].
-    - Output ONLY valid JSON. No explanations. No markdown. No comments.
+    1. ZERO hallucination. If information is not present → return "" or [].
+    2. Use EXACT text from resume. No rephrasing.
+    3. NEVER output explanations.
+    4. NEVER invent dates.
+    5. NEVER combine multiple jobs into one.
+    6. NEVER assume duration.
+    7. If a job does NOT contain a YEAR → it is NOT a valid job.
+    8. Missing fields must be "" or [] only.
+    9. Output must be valid JSON only.
 
+    ==================== PRE-PROCESSING LOGIC ====================
 
-    =====================
-    1. NAME & PRIMARY SKILLS
-    =====================
-    - Name: Extract the full name exactly as written in the resume (first occurrence at top).
-   - Primary Skill Set (Title):
-  Extract ONLY the short headline skill set that appears next to or immediately below the candidate name.
+    Before extraction:
+    - Identify clear SECTION HEADINGS.
+    - Identify TABLE STRUCTURES.
+    - Identify DATE PATTERNS (YYYY, MMM YYYY, Month YYYY, Present, Till Date).
+    - Identify bullet patterns (•, -, ➢, →, *, ✓, ▪, ▫, »).
 
-  Examples:
-  - "IT Procurement and Vendor Management"
-  - "Staffing Solutions, Vendor Development & Management, Team Management"
+    Then extract section-by-section.
 
-  Rules:
-  - Must be a short phrase (1 line only).
-  - Do NOT extract long comma-separated skill lists.
-  - Do NOT extract bullet-point skill sections.
-  - Do NOT extract Skills section content.
-  - Prefer the line near the candidate name/header.
-  - Preserve wording exactly as in the resume.
-  - If not found, return empty string "".
-
-    =====================
-    3. PROFESSIONAL EXPERIENCE
-    =====================
-    - Detect job roles from "Experience" or "Professional Experience" section.
-    - FORCE: 1 job role = 1 object.
-    - DO NOT merge multiple job roles into a single object.
-    - Order experiences in descending order (current job first).
-
-    For each job:
-    - job_role
-    - department (if present)
-    - duration
-    - project_description → bullet points
-    - roles_and_responsibilities → bullet points
-
-
-    =====================
-    4. SKILLS
-    =====================
-    - Look for headings:
-      "Skills", "Key Skills", "Technical Skills", "Skill Set", "Core Skills"
-
-    - Extract ALL lines after the heading until one of these headings appears:
-      "Certifications"
-      "Education"
-      "Personal Information"
-      "Projects"
-      "Work Experience"
-      "Professional Experience"
+    ==================== NAME EXTRACTION ====================
 
     Rules:
-    - Each bullet or full line = ONE array item.
-    - Keep category labels.
-    - Do NOT split comma-separated values.
-    - Preserve punctuation and case.
-    - Flatten into single array.
-    - If missing, return [].
+    - Name is usually top-most large text.
+    - Ignore company names like:
+      KPMG, Deloitte, EY, PwC, Accenture, Cognizant, TCS, Infosys, IBM, Microsoft, Google
+    - Ignore addresses.
+    - Ignore emails.
+    - Extract only the person's name.
 
+    If unsure → return "".
 
-    =====================
-    5. TOOLS & TECHNOLOGIES
-    =====================
-    - Extract any tools, platforms, software, or technologies mentioned under:
-      "Tools", "Technologies", "Technical Skills", "Environment", "Platforms".
-    - Return as array.
-    - If missing, return [].
+    ==================== PROFESSIONAL SUMMARY ====================
 
+    Look for headings:
+    SUMMARY, PROFESSIONAL SUMMARY, PROFILE, OBJECTIVE,
+    CAREER SUMMARY, EXECUTIVE SUMMARY, ABOUT ME
 
-    =====================
-    6. CERTIFICATIONS
-    =====================
-    - Look for headings:
-      "Certifications", "Certs"
+    If heading exists:
+    → Extract text until next section heading.
 
-    - Extract all lines until next section heading:
-      "Education"
-      "Skills"
-      "Work Experience"
-      "Professional Experience"
-      "Projects"
+    If no heading:
+    → Extract first 2 descriptive paragraphs before work experience.
 
+    Split into individual sentences.
 
-    =====================
-    7. EDUCATION
-    =====================
-    - Detect headings: "Education", "Professional Qualification"
-    - Extract all sentences or paragraphs exactly as written.
-    - Do NOT swap degree and institution.
-    - Do NOT invent any data.
-    - Preserve order and wording.
-    - Return as array of dictionaries with keys: degree, institution, passout_year
-    - If any field is missing, fill with "Not Provided" 
+    If none → [].
 
+    ==================== YEARS OF EXPERIENCE ====================
 
-    =====================
-    RESUME TEXT
-    =====================
-    \"\"\"{clean_text}\"\"\"
+    Extract phrases like:
+    - "11+ years"
+    - "5 years"
+    - "7+ years of experience"
+    - "Total Experience: 11 Years"
 
+    Must contain number + "year".
 
-    =====================
-    OUTPUT FORMAT
-    =====================
-    Return ONLY a valid JSON object following the schema.
-    Do not add explanations.
-    Do not add markdown.
-    Do not add comments.
+    If not found → "".
+
+    ==================== PROFESSIONAL EXPERIENCE ====================
+
+    STEP 1 — Identify Experience Sections:
+
+    Look for headings:
+    EXPERIENCE, WORK EXPERIENCE, EMPLOYMENT,
+    PROFESSIONAL EXPERIENCE, CAREER HISTORY,
+    PROJECT EXPERIENCE, ASSIGNMENTS
+
+    STEP 2 — TABLE HANDLING (VERY IMPORTANT)
+
+    If you detect table headers like:
+    Company Name | Joining Date | Relieving Date
+
+    Then:
+    - Each row = ONE JOB
+    - Combine joining + relieving date as duration
+    - Company name = value from company column
+    - job_role = "" (unless role column present)
+
+    STEP 3 — JOB ROLE FORMAT
+
+    If lines start with:
+    Job Role:
+
+    Each occurrence = separate job.
+
+    Extract:
+    - job_role
+    - duration (if present)
+    - responsibilities under it
+
+    STEP 4 — STANDARD JOB FORMAT
+
+    For each job:
+
+    VALID JOB CONDITIONS:
+    - Must contain a YEAR (2020, 2019–2022, Jan 2020 – Present)
+    - If no year → DO NOT treat as job
+
+    Extract:
+    - job_role
+    - company_name
+    - duration
+    - roles_and_responsibilities (all bullet points under that job)
+
+    DO NOT merge jobs.
+    DO NOT guess missing dates.
+
+    ==================== SKILLS ====================
+
+    Look under headings:
+    SKILLS, TECHNICAL SKILLS, CORE SKILLS,
+    COMPETENCIES, EXPERTISE
+
+    Rules:
+    - Split comma-separated skills.
+    - Each bullet = separate item.
+    - Do NOT include tools here.
+    - Do NOT duplicate.
+
+    If none → [].
+
+    ==================== TOOLS & TECHNOLOGIES ====================
+
+    Look under:
+    TOOLS, TECHNOLOGIES, SOFTWARE,
+    PLATFORMS, PROGRAMMING LANGUAGES,
+    DATABASES, FRAMEWORKS
+
+    Also scan full resume for common tools like:
+    SAP, SQL, Python, Java, AWS, Azure,
+    Docker, Kubernetes, Jenkins, Selenium,
+    Power BI, Tableau, Excel, Git, REST, API
+
+    Remove duplicates.
+
+    If none → [].
+
+    ==================== CERTIFICATIONS ====================
+
+    Look under:
+    CERTIFICATIONS, LICENSES & CERTIFICATIONS,
+    ACCREDITATIONS
+
+    Only extract listed certifications.
+    Do NOT include degrees.
+
+    If none → [].
+
+    ==================== EDUCATION ====================
+
+    Look under:
+    EDUCATION, ACADEMIC QUALIFICATIONS,
+    DEGREES, FORMAL EDUCATION
+
+    Extract ALL levels:
+    10th
+    12th
+    Bachelor’s
+    Master’s
+    PhD
+
+    Handle formats:
+    "B.Tech, SRM University, 2014"
+    "12th 2011"
+    "10th Standard, 2008"
+
+    If institution missing → "".
+    If year missing → "".
+
+    ==================== LANGUAGES ====================
+
+    Look under:
+    LANGUAGES, LANGUAGES KNOWN,
+    LANGUAGE SKILLS
+
+    Extract language names only.
+    Ignore proficiency level.
+
+    If none → [].
+
+    ==================== STRICT VALIDATION ====================
+
+    Before final output:
+    - Check every job has a YEAR in duration.
+    - Check no company name appears in name field.
+    - Check no tools inside skills.
+    - Check no degree inside certifications.
+    - Check JSON is valid.
+    - Check missing fields use "" or [] only.
+
+    ==================== RESUME TEXT ====================
+
+    {clean_text}
+
+    ==================== OUTPUT ====================
+
+    Return ONLY valid JSON.
+    No markdown.
+    No commentary.
+    No explanations.
     """
 
     raw_response = llm.invoke(prompt).strip()

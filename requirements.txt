@@ -5,3 +5,4 @@ re
 langchain-ollam
 json
 reportlab
+fastapi
