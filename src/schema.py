@@ -1,28 +1,13 @@
 def json_structure():
     return {
         "name": "",
+        "skills_set": [],
+        "summary": [],
         "professional_summary": {
             "years_of_experience": "",
-            "summary_points": []
+            "experience": []
         },
-        "primary_skill_set": [],
-        "professional_experience": [
-            {
-                "job_role": "",
-                "department": "",
-                "duration": "",
-                "project_description": [],
-                "roles_and_responsibilities": []
-            }
-        ],
         "skills": [],
-        "tools_and_technologies": [],
         "certifications": [],
-        "education": [
-            {
-                "degree": "",
-                "institution": "",
-                "passout_year": ""
-            }
-        ]
+        "education": []
     }

@@ -150,4 +150,4 @@ def save_resume_as_pdf_reportlab(formatted_resume: str, filename="output/KPMG_Re
         elements.append(Paragraph(line, paragraph_style))
 
     doc.build(elements)
-    print(f"✅ Resume saved successfully as '{filename}'")
+    print(f" Resume saved successfully as '{filename}'")

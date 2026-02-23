@@ -30,6 +30,7 @@ async def upload_resume(file: UploadFile = File(...)):
             f.write(content)
 
         text = extract_resume(file_path)
+        print(text)
         json_schema = json_structure()
         structured = parse_resume_with_llm(text, llm, json_schema)
         formatted_resume = wrap_kpmg_template_clean(structured)
