@@ -3,109 +3,135 @@ import re, json
 
 def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
     prompt = f"""
-            you are an export resume parser. your task is to extract every single piece of information from any resume format accurately
-            Return ONLY a valid JSON matching this schema:
-            {json.dumps(json_schema, indent=4)}
-            Extract everything - do not miss any text
-            your goal is to capture 100% of the content from the resume. No summarization, no skipping, no truncation, NO Hallucination.
-            =====complete resume parsing instructions==========
-        1. NAME / HEADER SECTION:
-            - Extract the Full name from the resume as it is 
-            - Dont use antoher name what mentioned in the resume take it only.
-            - Extract the skillset title
-        2. Summary / Professional Summary/ Profile/ Career Objective/ About Me/ Overview SECTION:
-            - Extract Every Sentence and bullet point under this section
-            - Preserve the exact wording, including all punctuation and formatting
-        3. Work Experience/ Employment/ Professional Experience SECTION:
-            - Identify every job role/title, department, duration range, company name mentioned
-            - Extract ALL job entries in DESCENDING ORDER (current job first)
-            
-            For EACH job, populate the "experience" array with objects containing:
-            - "job_role": The position title (e.g., "Senior Engineer")
-            - "company": Company name (e.g., "Caterpillar Inc.")
-            - "department": Department if mentioned
-            - "duration": Date range (e.g., "March 2020 – December 2025")
-            - "project_description": ARRAY containing ALL project descriptions, features, and technologies
-            - "roles_and_responsibilities": ARRAY containing EVERY bullet point and responsibility
-            
-            IMPORTANT: 
-            - If a job has 20 bullet points, put ALL 20 in "roles_and_responsibilities"
-            - If a job has multiple projects, put ALL project details in "project_description"
-            - NEVER leave these arrays empty if content exists in the resume
-        4. Education, Academic Background, Qualifications, Degrees, Educational History SECTION:
-                - Extract Every thing mention in the resume 
-                - Include institute names
-                - Include name of the degree, university\collage name,passout year
-                - Preserve the exact wording
-                - In this section add only this section information only dont add extra information     
-                - Include ALL education entries (degrees, diplomas, 10th, 12th if mentioned)
+       You are a professional resume parser.
 
-        5. Skills, Technical Skills, Core Competencies, Expertise, Technologies, Tools, Skills & Expertise SECTION:
-                - Extract every skills mentioned in the resume
-                - Dont skip any lines/sentence/paragraph.
-                - If skills are listed with commas, extract each one same as it is
-                - EXTRACT FROM ALL SKILLS SECTIONS: Look for "Technical Set", "Front End", "Tools", "Technologies" sections
-                - EXTRACT EVERY SINGLE SKILL: Including but not limited to Python, FastAPI, Langchain, GenAI, ML, Django, Matplotlib, Scikit, Numpy, Mongo DB, Elasticsearch, MySQL, NO SQL, Docker, Git, Bitbucket, CI/CD pipeline AWS, HTML, CSS, Bootstrap
-                - DO NOT MISS ANY SKILL - if a skill is mentioned anywhere in the resume, add it to the skills array
+       Extract information from the resume text below and return ONLY a valid JSON object
+       that strictly matches this schema:
 
-        6. Certifications, Certificates, Training, Courses, Professional Development:
-                - Extract every certificate mentioned in the resume
-                - Dont add extra information in this section, only extract same as it is mentioned in the resume
-                - Dont skip any lines/sentence/paragraph.
+       {json.dumps(json_schema, indent=4)}
 
-        7. PROJECTS SECTION (if separate from work experience):
-                - Look for headings like "Projects", "Responsibilities and Project", "Recent Portfolio", "Key Projects"
-                - Extract EVERY project mentioned with COMPLETE details:
-                    * Project name/title
-                    * Description
-                    * Key Features (ALL of them)
-                    * Technologies Used (ALL of them)
-                    * Role/Responsibilities in the project
-                - Associate each project with the correct job/company if possible
+       IMPORTANT:
+       - If no explicit summary heading exists, extract the first descriptive paragraph before Skills or Experience as summary.
+       - Do not return empty summary if descriptive text exists at the top.
 
-        8. ADDITIONAL SECTIONS:
-                - Extract information from any other sections like "Personal Data", "Languages", "Strengths", "Declaration"
-                - Include languages known, nationality, etc.
+       IMPORTANT GLOBAL RULES:
+       - Extract ONLY information that exists in the resume text.
+       - NEVER create or assume data.
+       - NEVER use placeholder values like "John Doe".
+       - Preserve original wording exactly as in resume.
+       - If a section is missing, return an empty array [].
+       - Output ONLY valid JSON. No explanations. No markdown. No comments.
 
-            ===== HOW TO HANDLE DIFFERENT FORMATS =====
 
-            FORMAT 1: BULLET POINTS
-            ✓ "• Led supplier enablement"
-            ✓ "- Developed backend services"
-            ✓ "* Created automation framework"
-            → Extract each bullet point as separate item
+       =====================
+       1. NAME & PRIMARY SKILLS
+       =====================
+       - Name: Extract the full name exactly as written in the resume (first occurrence at top).
 
-            FORMAT 2: TABLES
-            ✓ Tables with company names and durations
-            ✓ Tables with skills categories
-            → Extract ALL cells, rows, and columns
+      - Primary Skill Set (Title):
+     Extract ONLY the short headline skill set that appears next to or immediately below the candidate name.
 
-            FORMAT 3: CATEGORIZED LISTS
-            "Programming Languages: Python, Java, JavaScript"
-            → Extract each skill individually: "Python", "Java", "JavaScript"
+     Examples:
+     - "IT Procurement and Vendor Management"
+     - "Staffing Solutions, Vendor Development & Management, Team Management"
 
-            FORMAT 4: PROJECT DESCRIPTIONS
-            "Project: Chat Microservice
-            - Developed using Python
-            - Integrated with OpenAI"
-            → Extract project name AND ALL bullet points
+     Rules:
+     - Must be a short phrase (1 line only).
+     - Do NOT extract long comma-separated skill lists.
+     - Do NOT extract bullet-point skill sections.
+     - Do NOT extract Skills section content.
+     - Prefer the line near the candidate name/header.
+     - Preserve wording exactly as in the resume.
+     - If not found, return empty string "".
 
-            FORMAT 5: INLINE TEXT
-            "Experienced in Python, Flask, and Azure"
-            → Extract ALL mentioned skills
+       =====================
+       3. PROFESSIONAL EXPERIENCE
+       =====================
+       - Detect job roles from "Experience" or "Professional Experience" section.
+       - FORCE: 1 job role = 1 object.
+       - DO NOT merge multiple job roles into a single object.
+       - Order experiences in descending order (current job first).
 
-            FORMAT 6: MIXED FORMAT (TABLES + BULLETS + TEXT)
-            → Extract EVERYTHING from all formats
+       For each job:
+       - job_role
+       - department (if present)
+       - duration
+       - project_description → bullet points
+       - roles_and_responsibilities → bullet points
 
-            ===== CRITICAL REMINDERS =====
-            - EXTRACT EVERYTHING: Contact info, ALL summary paragraphs, ALL jobs, ALL projects under each job, ALL skills from ALL sections
-            - DO NOT SKIP: If a job has 4 projects, capture all 4. If skills section has 20 skills, capture all 20.
-            - PRESERVE EXACT WORDING: Copy text exactly as it appears
-            - NO HALLUCINATION: Only extract what is explicitly written
 
-            ===== RESUME TEXT =====
-            {clean_text}
-            """
+       =====================
+       4. SKILLS
+       =====================
+       - Look for headings:
+         "Skills", "Key Skills", "Technical Skills", "Skill Set", "Core Skills"
+
+       - Extract ALL lines after the heading until one of these headings appears:
+         "Certifications"
+         "Education"
+         "Personal Information"
+         "Projects"
+         "Work Experience"
+         "Professional Experience"
+
+       Rules:
+       - Each bullet or full line = ONE array item.
+       - Keep category labels.
+       - Do NOT split comma-separated values.
+       - Preserve punctuation and case.
+       - Flatten into single array.
+       - If missing, return [].
+
+
+       =====================
+       5. TOOLS & TECHNOLOGIES
+       =====================
+       - Extract any tools, platforms, software, or technologies mentioned under:
+         "Tools", "Technologies", "Technical Skills", "Environment", "Platforms".
+       - Return as array.
+       - If missing, return [].
+
+
+       =====================
+       6. CERTIFICATIONS
+       =====================
+       - Look for headings:
+         "Certifications", "Certs"
+
+       - Extract all lines until next section heading:
+         "Education"
+         "Skills"
+         "Work Experience"
+         "Professional Experience"
+         "Projects"
+
+
+       =====================
+       7. EDUCATION
+       =====================
+       - Detect headings: "Education", "Professional Qualification"
+       - Extract all sentences or paragraphs exactly as written.
+       - Do NOT swap degree and institution.
+       - Do NOT invent any data.
+       - Preserve order and wording.
+       - Return as array of dictionaries with keys: degree, institution, passout_year
+       - If any field is missing, fill with "Not Provided" 
+
+
+       =====================
+       RESUME TEXT
+       =====================
+       \"\"\"{clean_text}\"\"\"
+
+
+       =====================
+       OUTPUT FORMAT
+       =====================
+       Return ONLY a valid JSON object following the schema.
+       Do not add explanations.
+       Do not add markdown.
+       Do not add comments.
+       """
     raw_response = llm.invoke(prompt)
     print("===== RAW LLM RESPONSE =====")
     print(raw_response)

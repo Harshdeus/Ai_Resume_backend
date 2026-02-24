@@ -6,3 +6,5 @@ langchain-ollam
 json
 reportlab
 fastapi
+sentence-transformers
+ scikit-learn
