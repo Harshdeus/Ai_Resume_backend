@@ -1,166 +1,121 @@
-import re, json
-
-
-def wrap_kpmg_template_clean(json_data: dict) -> str:
+def wrap_kpmg_template_from_json(json_data: dict) -> str:
     lines = []
 
-    # Get skills - combine skills_set and skills
-    skills_set = json_data.get('skills_set', [])
-    skills = json_data.get('skills', [])
-    all_skills = list(set(skills_set + skills))  # Remove duplicates
+    # Name and skills
+    name = json_data.get("name", "")
+    skills = json_data.get("skills", [])
+    # Ensure skills is a list and handle empty case
+    if isinstance(skills, list) and skills:
+        skills_text = ", ".join(skills[:5])
+    else:
+        skills_text = ""
+    lines.append(f"{name} – {skills_text}\n")
 
-    # Right-aligned KPMG logo
-    lines.append(" " * 60 + "[KPMG Logo]\n")
-
-    # Name + primary skills
-    name = json_data.get('name', '')
-    skills_text = ', '.join(all_skills[:5]) if all_skills else ''  # Show top 5 skills
-    lines.append(f"{name} - {skills_text}\n")
-
-    # Summary section - Show ALL summary points
+    # ---------------- Summary ----------------
     lines.append("Summary:")
-    summary_list = json_data.get("summary", [])
-    if isinstance(summary_list, str):
-        summary_list = [summary_list] if summary_list.strip() else []
-    elif not isinstance(summary_list, list):
-        summary_list = []
+    summary = json_data.get("summary", [])
+    if isinstance(summary, str):
+        summary = [summary] if summary.strip() else []
+    elif not isinstance(summary, list):
+        summary = []
 
-    for s in summary_list:
+    for s in summary:
         if s and isinstance(s, str) and s.strip():
             lines.append(f"• {s}")
     lines.append("")
 
-    # Professional Summary with Years
-    prof_summary = json_data.get("professional_summary", {})
-    if not isinstance(prof_summary, dict):
-        prof_summary = {}
+    # ---------------- Professional Summary ----------------
+    ps = json_data.get("professional_summary", {})
+    if not isinstance(ps, dict):
+        ps = {}
 
-    years_exp = prof_summary.get("years_of_experience", "")
-    if years_exp:
-        lines.append(f"Professional Summary ({years_exp}):\n")
+    years = ps.get("years_of_experience", "")
+    if years:
+        lines.append(f"Professional Summary ({years} Years):")
     else:
-        lines.append("Professional Summary:\n")
+        lines.append("Professional Summary:")
 
-    # Work Experience - Handle ALL jobs in the experience array with type checking
-    experiences = prof_summary.get("experience", [])
-    if not isinstance(experiences, list):
-        experiences = [experiences] if experiences else []
+    experiences = ps.get("experience", [])
+    if isinstance(experiences, str):
+        experiences = [experiences] if experiences.strip() else []
+    elif not isinstance(experiences, list):
+        experiences = []
 
     for exp in experiences:
-        # Skip if exp is None or empty
-        if not exp:
+        if exp and isinstance(exp, str) and exp.strip():
+            lines.append(f"• {exp}")
+    lines.append("")
+
+    # ---------------- Skills ----------------
+    lines.append("Skills:")
+    skills_list = json_data.get("skills", [])
+    if isinstance(skills_list, str):
+        skills_list = [skills_list] if skills_list.strip() else []
+    elif not isinstance(skills_list, list):
+        skills_list = []
+
+    for skill in skills_list:
+        if skill and isinstance(skill, str) and skill.strip():
+            lines.append(f"• {skill}")
+    lines.append("")
+
+    # ---------------- Certifications ----------------
+    lines.append("Certifications:")
+    certs = json_data.get("certifications", [])
+    if isinstance(certs, str):
+        certs = [certs] if certs.strip() else []
+    elif not isinstance(certs, list):
+        certs = []
+
+    for c in certs:
+        if not c:
             continue
 
-        if isinstance(exp, dict):
-            # Extract job details with safe .get() calls
-            job_role = exp.get("job_role", "")
-            company = exp.get("company", "")
-            duration = exp.get("duration", "")
+        if isinstance(c, dict):
+            # Try different possible field names for certification title
+            title = c.get("title") or c.get("name") or c.get("certification") or ""
+            if title:
+                lines.append(f"• {title}")
+            else:
+                # If no title field, convert dict to string representation
+                lines.append(f"• {str(c)}")
+        elif isinstance(c, str) and c.strip():
+            lines.append(f"• {c}")
+    lines.append("")
 
-            # Format the job header
-            job_header = job_role
-            if company and isinstance(company, str):
-                job_header += f" at {company}"
-            if duration and isinstance(duration, str):
-                job_header += f", {duration}"
-
-            if job_header.strip():
-                lines.append(job_header)
-
-            # Add project description if exists (handle both string and list)
-            project_desc = exp.get("project_description", "")
-            if project_desc:
-                lines.append("Project Description:")
-                if isinstance(project_desc, str):
-                    if project_desc.strip():
-                        lines.append(f"• {project_desc}")
-                elif isinstance(project_desc, list):
-                    for pd in project_desc:
-                        if pd and isinstance(pd, str) and pd.strip():
-                            lines.append(f"• {pd}")
-
-            # Add roles and responsibilities
-            responsibilities = exp.get("roles_and_responsibilities", [])
-            if responsibilities:
-                lines.append("Role & Responsibilities:")
-                if isinstance(responsibilities, str):
-                    if responsibilities.strip():
-                        lines.append(f"• {responsibilities}")
-                elif isinstance(responsibilities, list):
-                    for r in responsibilities:
-                        if r and isinstance(r, str) and r.strip():
-                            lines.append(f"• {r}")
-            lines.append("")
-
-        elif isinstance(exp, str):
-            # Simple string format - try to parse it
-            if exp.strip():
-                lines.append(exp)
-                lines.append("Role & Responsibilities:")
-                lines.append("• Details not available in structured format")
-                lines.append("")
-
-    # Skills section - Show ALL skills
-    if all_skills:
-        lines.append("Skills:")
-        for skill in all_skills:
-            if skill and isinstance(skill, str) and skill.strip():
-                # Handle skills that might contain commas
-                if ',' in skill:
-                    # Split comma-separated skills
-                    sub_skills = [s.strip() for s in skill.split(',') if s.strip()]
-                    for sub_skill in sub_skills:
-                        if sub_skill:
-                            lines.append(f"• {sub_skill}")
-                else:
-                    lines.append(f"• {skill}")
-        lines.append("")
-
-    # Certifications - Show COMPLETE certification text
-    certs = json_data.get("certifications", [])
-    if certs:
-        lines.append("Certifications:")
-        if isinstance(certs, str):
-            certs = [certs] if certs.strip() else []
-        elif not isinstance(certs, list):
-            certs = []
-
-        for c in certs:
-            if c and isinstance(c, str) and c.strip():
-                lines.append(f"• {c}")
-        lines.append("")
-
-    # Education - Handle with type checking
+    # ---------------- Education ----------------
     lines.append("Education:")
-    education_list = json_data.get("education", [])
-    if not isinstance(education_list, list):
-        education_list = [education_list] if education_list else []
+    education = json_data.get("education", [])
+    if isinstance(education, str):
+        education = [education] if education.strip() else []
+    elif not isinstance(education, list):
+        education = []
 
-    for e in education_list:
+    for e in education:
         if not e:
             continue
 
         if isinstance(e, dict):
-            degree = e.get("degree", "")
-            institution = e.get("institution", "")
+            # Try different possible field names
+            degree = e.get("degree") or e.get("degree_name") or ""
+            institute = e.get("institute") or e.get("institution") or e.get("college") or e.get("university") or ""
+            year = e.get("passout_year") or e.get("year") or e.get("graduation_year") or ""
 
-            # Handle both 'year' and 'passout_year' field names
-            year = e.get("year", "") or e.get("passout_year", "")
+            # Build education line with available information
+            edu_parts = []
+            if degree:
+                edu_parts.append(degree)
+            if institute:
+                edu_parts.append(institute)
+            if year:
+                edu_parts.append(year)
 
-            # Try auto-extract year if empty
-            if not year and isinstance(degree, str) and isinstance(institution, str):
-                match = re.search(r"(20\d{2}|19\d{2})", f"{degree} {institution}")
-                year = match.group(0) if match else ""
-
-            # Ensure all values are strings
-            degree = str(degree) if degree else ""
-            institution = str(institution) if institution else ""
-            year = str(year) if year else ""
-
-            lines.append(f"• {degree} | {institution} | {year}")
-        elif isinstance(e, str):
-            # Handle string format education
+            if edu_parts:
+                lines.append(f"• {', '.join(edu_parts)}")
+            else:
+                # If no specific fields found, add the dict as string
+                lines.append(f"• {str(e)}")
+        elif isinstance(e, str) and e.strip():
             lines.append(f"• {e}")
-    lines.append("")
 
     return "\n".join(lines).strip()

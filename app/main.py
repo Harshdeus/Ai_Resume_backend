@@ -4,8 +4,8 @@ from src.parse_resume import extract_resume
 from langchain_ollama import OllamaLLM
 from src.schema import json_structure
 from prompt.structured_prompt import parse_resume_with_llm
-from prompt.kpmg_prompt import wrap_kpmg_template_clean
-from src.export_to_pdf import save_resume_as_pdf_reportlab
+from prompt.kpmg_prompt import wrap_kpmg_template_from_json
+from src.export_to_pdf import create_kpmg_template_pdf
 import os
 
 app = FastAPI()
@@ -28,13 +28,18 @@ async def upload_resume(file: UploadFile = File(...)):
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-
+        print("Extracting the resume .pdf / .docx file...")
         text = extract_resume(file_path)
-        print(text)
         json_schema = json_structure()
+        print("Converting structured Resume......")
         structured = parse_resume_with_llm(text, llm, json_schema)
-        formatted_resume = wrap_kpmg_template_clean(structured)
-        save_resume_as_pdf_reportlab(formatted_resume)
+        formatted_resume = wrap_kpmg_template_from_json(structured)
+        print("Structured Output")
+        print("="*60)
+        print(structured)
+        print("=" * 60)
+        print("Converting structured Resume to PDF Format......")
+        create_kpmg_template_pdf(structured)
 
         return JSONResponse(content={
             "filename": filename,
