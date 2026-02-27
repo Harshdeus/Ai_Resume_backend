@@ -1,10 +1,10 @@
-os
 PyPDF2
-docx
-re
-langchain-ollam
-json
+python-docx
+langchain-ollama
 reportlab
 fastapi
 sentence-transformers
- scikit-learn
+scikit-learn
+sqlalchemy
+pymysql
+python-dotenv
