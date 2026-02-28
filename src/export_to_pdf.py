@@ -9,7 +9,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 import os
 
 
-def create_kpmg_template_pdf(resume_data, filename="output/KPMG_Template.pdf"):
+def create_kpmg_template_pdf(resume_data, company_selected,filename="output/KPMG_Template.pdf"):
     src_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(src_dir)
     file_path = os.path.join(project_root, filename)
@@ -84,7 +84,7 @@ def create_kpmg_template_pdf(resume_data, filename="output/KPMG_Template.pdf"):
     )
 
     # ---------------- Header ---------------- #
-    elements.append(Paragraph("KPMG", logo_style))
+    elements.append(Paragraph(company_selected, logo_style))
     elements.append(Spacer(1, 12))
 
     name = resume_data.get("name", "")

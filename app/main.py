@@ -1,4 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form,Depends
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse,FileResponse
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -13,10 +14,13 @@ from src.export_to_pdf import create_kpmg_template_pdf
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from utils.email_utils import send_email_notification
+# from src.templet import templet
 import os
-
+def templet(company: str = "KPMG"):
+    return company.strip().upper()
 app = FastAPI()
 init_db()
+selected_company = "KPMG"
 
 UPLOAD_FOLDER = "uploaded_resumes"
 JD_FOLDER = "JD"
@@ -28,6 +32,18 @@ os.makedirs(JD_FOLDER, exist_ok=True)
 llm = OllamaLLM(model="llama3.2:3b", temperature=0.0)
 embeddings = SentenceTransformer('all-MiniLM-L6-V2')
 
+
+
+class TemplateRequest(BaseModel):
+    company: str
+@app.post("/Generate_different_templets")
+def templets_generator(req: TemplateRequest):
+    global selected_company
+    selected_company = templet(req.company)
+    return {
+        "status": "success",
+        "company": selected_company
+    }
 # @app.post("/upload_resume/")
 # async def upload_resume(file: UploadFile = File(...)):
 #     try:
@@ -100,7 +116,8 @@ async def compare_output_resume_with_jd(file: UploadFile = File(...),jd_text: st
             print(structured)
             print("=" * 60)
             print("Converting structured Resume to PDF Format......")
-            create_kpmg_template_pdf(structured)
+            company_selected = selected_company
+            create_kpmg_template_pdf(structured,company_selected)
             print("Output Resume is extracted to text...")
             output_test = extract_resume(output_filepath)
             input_embedding = embeddings.encode([text])
@@ -164,11 +181,13 @@ def store_the_resume_in_DB(
         "email_status": notification_status
     }
 
-@app.get("/download_resume/{filename}")
+@app.get("/download_resume")
 async def download_resume():
     filepath = "output/KPMG_Template.pdf"
+
     if not os.path.exists(filepath):
-        raise HTTPException(status_code=404,detail="File not found")
+        raise HTTPException(status_code=404, detail="File not found")
+
     return FileResponse(
         path=filepath,
         media_type="application/pdf",
