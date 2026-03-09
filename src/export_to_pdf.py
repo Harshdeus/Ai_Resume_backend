@@ -14,7 +14,7 @@ def create_kpmg_template_pdf(resume_data, company_selected,filename="output/KPMG
     project_root = os.path.dirname(src_dir)
     file_path = os.path.join(project_root, filename)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
+    print(company_selected)
     # Register fonts (optional - will use Helvetica if Calibri not available)
     try:
         pdfmetrics.registerFont(TTFont("Calibri", "calibri.ttf"))

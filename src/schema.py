@@ -1,7 +1,7 @@
 def json_structure():
     return {
         "name": "",
-        "skills_set": [],
+        "position": "",
         "summary": [],
         "professional_summary": {
             "years_of_experience": "",

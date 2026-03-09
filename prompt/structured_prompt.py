@@ -24,7 +24,7 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
 
 
        =====================
-       1. NAME & PRIMARY SKILLS
+       1. NAME &  POSITION
        =====================
        - Name: Extract the full name exactly as written in the resume (first occurrence at top).
 
@@ -146,15 +146,13 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
         return json_schema
 
     # Normalize empty fields
-    data.setdefault("skills_set", [])
+    data.setdefault("position", "")
     data.setdefault("summary", [])
     data.setdefault("skills", [])
     data.setdefault("certifications", [])
     data.setdefault("education", [])
 
-    # If skills_set is empty but skills has values, copy skills to skills_set
-    if not data["skills_set"] and data["skills"]:
-        data["skills_set"] = data["skills"].copy()
+
 
     ps = data.get("professional_summary", {})
     ps.setdefault("years_of_experience", "")
