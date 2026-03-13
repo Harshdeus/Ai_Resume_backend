@@ -11,5 +11,5 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     role = Column(String(255), default="candidate")
     is_logged_in = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now())
+    created_at = Column(DateTime, default=datetime.now)
     last_login = Column(DateTime, default=None)

@@ -1,4 +1,5 @@
-import re, json
+import re
+import json
 
 
 def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
@@ -24,7 +25,7 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
 
 
        =====================
-       1. NAME &  POSITION
+       1. NAME & POSITION
        =====================
        - Name: Extract the full name exactly as written in the resume (first occurrence at top).
 
@@ -115,7 +116,7 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
        - Do NOT invent any data.
        - Preserve order and wording.
        - Return as array of dictionaries with keys: degree, institution, passout_year
-       - If any field is missing, fill with "Not Provided" 
+       - If any field is missing, fill with "Not Provided"
 
 
        =====================
@@ -132,6 +133,7 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
        Do not add markdown.
        Do not add comments.
        """
+
     raw_response = llm.invoke(prompt)
     print("===== RAW LLM RESPONSE =====")
     print(raw_response)
@@ -145,17 +147,109 @@ def parse_resume_with_llm(clean_text: str, llm, json_schema) -> dict:
     except json.JSONDecodeError:
         return json_schema
 
-    # Normalize empty fields
+    if not isinstance(data, dict):
+        return json_schema
+
+    # Top-level safe defaults
+    data.setdefault("name", "")
     data.setdefault("position", "")
     data.setdefault("summary", [])
     data.setdefault("skills", [])
     data.setdefault("certifications", [])
     data.setdefault("education", [])
+    data.setdefault("professional_summary", {})
 
+    # Normalize summary
+    if isinstance(data["summary"], str):
+        data["summary"] = [data["summary"]] if data["summary"].strip() else []
+    elif not isinstance(data["summary"], list):
+        data["summary"] = []
 
+    # Normalize skills
+    if isinstance(data["skills"], str):
+        data["skills"] = [data["skills"]] if data["skills"].strip() else []
+    elif not isinstance(data["skills"], list):
+        data["skills"] = []
 
+    # Normalize certifications
+    if isinstance(data["certifications"], str):
+        data["certifications"] = [data["certifications"]] if data["certifications"].strip() else []
+    elif not isinstance(data["certifications"], list):
+        data["certifications"] = []
+
+    # Normalize education
+    if isinstance(data["education"], dict):
+        data["education"] = [data["education"]]
+    elif not isinstance(data["education"], list):
+        data["education"] = []
+
+    normalized_education = []
+    for edu in data["education"]:
+        if isinstance(edu, dict):
+            normalized_education.append({
+                "degree_name": edu.get("degree_name") or edu.get("degree") or "Not Provided",
+                "institute_name": edu.get("institute_name") or edu.get("institution") or "Not Provided",
+                "university_name": edu.get("university_name") or "Not Provided",
+                "passout_year": edu.get("passout_year") or "Not Provided",
+            })
+        elif isinstance(edu, str) and edu.strip():
+            normalized_education.append({
+                "degree_name": edu.strip(),
+                "institute_name": "Not Provided",
+                "university_name": "Not Provided",
+                "passout_year": "Not Provided",
+            })
+    data["education"] = normalized_education
+
+    # Normalize professional_summary
     ps = data.get("professional_summary", {})
+
+    # If LLM returns professional_summary as list, take first dict
+    if isinstance(ps, list):
+        if ps and isinstance(ps[0], dict):
+            ps = ps[0]
+        else:
+            ps = {}
+
+    if not isinstance(ps, dict):
+        ps = {}
+
     ps.setdefault("years_of_experience", "")
     ps.setdefault("experience", [])
+
+    if not isinstance(ps["experience"], list):
+        if isinstance(ps["experience"], dict):
+            ps["experience"] = [ps["experience"]]
+        else:
+            ps["experience"] = []
+
+    normalized_experience = []
+    for exp in ps["experience"]:
+        if not isinstance(exp, dict):
+            continue
+
+        project_description = exp.get("project_description", [])
+        if isinstance(project_description, str):
+            project_description = [project_description] if project_description.strip() else []
+        elif not isinstance(project_description, list):
+            project_description = []
+
+        roles_and_responsibilities = exp.get("roles_and_responsibilities", [])
+        if isinstance(roles_and_responsibilities, str):
+            roles_and_responsibilities = [roles_and_responsibilities] if roles_and_responsibilities.strip() else []
+        elif not isinstance(roles_and_responsibilities, list):
+            roles_and_responsibilities = []
+
+        normalized_experience.append({
+            "company": exp.get("company", ""),
+            "job_role": exp.get("job_role", ""),
+            "department": exp.get("department", ""),
+            "duration": exp.get("duration", ""),
+            "project_description": project_description,
+            "roles_and_responsibilities": roles_and_responsibilities,
+        })
+
+    ps["experience"] = normalized_experience
+    data["professional_summary"] = ps
 
     return data

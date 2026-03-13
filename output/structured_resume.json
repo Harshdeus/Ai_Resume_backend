@@ -1,35 +1,75 @@
 {
-    "name": "Senior SAP Finance Functional Expert",
-    "position": "Senior SAP Finance Functional Expert",
+    "name": "SHRIKANT SHINDE",
+    "position": "Senior Developer RPA COE",
     "professional_summary": {
-        "years_of_experience": "10+ Years",
+        "years_of_experience": "5.6",
         "experience": [
             {
-                "company": "Lead SAP Finance implementations and rollouts (ECC & S/4HANA)",
-                "job_role": "Functional Lead / Solution Architect \u2013 SAP Finance",
-                "department": "SAP Finance",
-                "duration": "Lead end-to-end SAP Finance implementations and rollouts (ECC & S/4HANA)",
+                "company": "Hindustan Coca Cola Beverages (HCCB)",
+                "job_role": "Senior Developer RPA COE",
+                "department": "",
+                "duration": "Dec 2023 - Dec 2025",
                 "project_description": [
-                    "Design and configure SAP Finance modules including: FI-GL, FI-AP, FI-AR Asset Accounting (FI-AA) Bank Accounting, Cash Management Controlling (CO \u2013 Cost Center, Profit Center, Internal Orders)"
+                    "Architected and delivered an end-to-end FG Tally report creation Bot, which involved 30 working excel table creations and 18 Sap Dump downloads. Build 2 flows, SAP Dump Download Flow & Working File Data Massage Flow. SAP Dump Download flow involved UI Automation to SAP Login and to feed input parameters to multiple SAP T-code. (MB51, MB5L, MB5B, MB5TD, KE24, FAGLL03, S_ALR_87012284 etc) and download SAP Dump. Working File Data Massage flow involved python data massaging and excel working sheet creation in the assigned column format headers with source being SAP Dump, Business Shared Input files, Master, Mapping files. Finally, data added in the respective working file and FG Tally final File.",
+                    "Implemented Exception Handling and logging mechanism to increase traceability and reliability of bot. In end bot code moved from development environment to production environment using Microsoft power Automate Solution Framework",
+                    "Designed, Developed and deployed end-to-end real-time approval automation solution, leveraging Power Automate (Cloud & Desktop). Build integrated workflows. Each flow assigned with specific task. Leveraged Power Automate to establish integration with database and perform Data extraction from SQL Database. Performed Data Massage with python scripting to produce the required database master input. Implemented Excel Automation to produce Profit & loss excel output with excel input received from business as input. Involved in cloud flow creation to produce 4 level business Approvals/rejection on Outlook and Teams with attachments. Approval/rejection status tracking. Developed cloud flow to generate contract document post successful 4 approvals."
                 ],
                 "roles_and_responsibilities": [
-                    "Lead UAT cycles, defect resolution, and post-go-live stabilization Provide guidance on SAP best practices, compliance, and audit requirements Mentor junior functional consultants"
+                    "Acted as the primary technical escalation point for addressing complex automation challenges and making architectural decisions. Conducted rigorous code reviews and solution design assessments to ensure compliance with governance frameworks and coding standards. Coordinated release management, change control processes, and prepare environments to enable smooth deployment cycles. Advocated for reusable automation components, standardized frameworks, and scalable design patterns to maximize solution maintainability and scalability. Identified process inefficiencies proactively and lead continuous improvement initiatives that deliver measurable automation-driven productivity gains, improving processing time."
+                ]
+            },
+            {
+                "company": "Excellarate Softech Pvt Ltd Encora Inc",
+                "job_role": "RPA Software Developer",
+                "department": "",
+                "duration": "May 2020 - Sep 2022",
+                "project_description": [
+                    "Designed, Developed and deployed end-to-end real-time Report automation solution, leveraging UiPath Studio for development. Leveraged UiPath to establish logging with Nelson database and downloads of multiple inputs. Performed Data Massage with python scripting to append data extracted. Established required format, created pivots. Implemented Excel Automation, VBA Automation to produce MS Trends Nelson Report. Pivots refreshed executed through micros, Updated template with current dates. Implemented report sharing with business through common shared drive folder. Added exception handling, logging for traceability and reliability of bot run. Successful deployment of the project in orchestrator."
+                ],
+                "roles_and_responsibilities": [
+                    "Involved in UI Automation, Web Automation achieving to scrape Hidden Pop-up data using hidden selectors in required format. Implemented Data Manipulation and Data Operation to required case creation. Created Sequence and Flowchart. Implemented exception handling for the workflows. Involved in Excel Automation to Work on Required Excel Files on given date to get the right data and process on the data to get the required result of count of machines, percent of machines, SI and PID of machines. Involved in Image Automation for RDP project. Email Automation for updating the Bot fetched result. Remote Desktop Automation to manage machines state. Involved in Azure Virtual Machine Operations Automation. Involved in automation of transporting data from specific excel files to specific sheets."
+                ]
+            },
+            {
+                "company": "UiPath",
+                "job_role": "RPA Developer",
+                "department": "",
+                "duration": "",
+                "project_description": [
+                    "Involved in creating the UiPath Flowchart and Sequence development for the application project. Involved in Unstructured Data Scraping through Anchor Base and OCR Techniques. Looping the entire automation in order to extract the required data for multiple products with valid and invalid medicinal code. Extracting specifications, manufacturer name, manufacturer number, product url. Some Product code had more than one multiple item so looping through them. Involved in Data Table Activities and Excel Activities to extract the required data. Implemented Controlling and Management of the bot through Orchestrator."
+                ],
+                "roles_and_responsibilities": [
+                    "Involved in File Automation for accessing the files. Implemented Data Manipulation and Data Operation to required case creation. Created Sequence and Flowchart. Worked on Required Excel Files on given date to get the right data and process on the data to get the required result. Implemented Controlling and Management of the bot through Orchestrator. Successful Delivery of the project to the Rezoomex team."
+                ]
+            },
+            {
+                "company": "UiPath",
+                "job_role": "RPA Developer",
+                "department": "",
+                "duration": "",
+                "project_description": [
+                    "Involved in creating the UiPath Flowchart and Sequence development for the application project. Involved in Unstructured Data Scraping through Anchor Base and OCR Techniques. Looping the entire automation in order to extract the required data for multiple products with valid and invalid medicinal code. Extracting specifications, manufacturer name, manufacturer number, product url. Some Product code had more than one multiple item so looping through them. Involved in Data Table Activities and Excel Activities to extract the required data. Implemented Controlling and Management of the bot through Orchestrator."
+                ],
+                "roles_and_responsibilities": [
+                    "Involved in File Automation for accessing the files. Implemented Data Manipulation and Data Operation to required case creation. Created Sequence and Flowchart. Worked with Asset and Schedule process in Orchestrator. Worked on Required text Files on given date to get the right data and process on the data in order to get the required result. Validating the values obtained with original values. Involved in Excel Automation to carry out the task. Implemented Controlling and Management of the bot through Orchestrator."
+                ]
+            },
+            {
+                "company": "UiPath",
+                "job_role": "RPA Developer",
+                "department": "",
+                "duration": "",
+                "project_description": [
+                    "Involved in creating the UiPath Flowchart and Sequence development for the application project. Involved in Unstructured Data Scraping through Anchor Base and OCR Techniques. Looping the entire automation in order to extract the required data for multiple products with valid and invalid medicinal code. Extracting specifications, manufacturer name, manufacturer number, product url. Some Product code had more than one multiple item so looping through them. Involved in Data Table Activities and Excel Activities to extract the required data. Implemented Controlling and Management of the bot through Orchestrator."
+                ],
+                "roles_and_responsibilities": [
+                    "Involved in creating the UiPath Flowchart and Sequence development for the application project. Involved in Unstructured Data Scraping through Anchor Base and OCR Techniques. Looping the entire automation in order to extract the required data for multiple products with valid and invalid medicinal code. Extracting specifications, manufacturer name, manufacturer number, product url. Some Product code had more than one multiple item so looping through them. Involved in Data Table Activities and Excel Activities to extract the required data. Implemented Controlling and Management of the bot through Orchestrator."
                 ]
             }
         ]
     },
-    "skills": [
-        "IT Procurement and Vendor Management",
-        "Staffing Solutions, Vendor Development & Management, Team Management"
-    ],
+    "summary": [],
+    "skills": [],
     "certifications": [],
-    "education": [
-        {
-            "degree_name": "Not Provided",
-            "institute_name": "Not Provided",
-            "university_name": "Not Provided",
-            "passout_year": "Not Provided"
-        }
-    ],
-    "summary": []
+    "education": []
 }
